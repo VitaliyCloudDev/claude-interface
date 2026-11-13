@@ -1,5 +1,7 @@
 # claude-interface
 
+<img width="1278" height="707" alt="claude-interface" src="https://github.com/user-attachments/assets/93c8a8de-92c8-477d-ab1b-e79d2e9dbb5b" />
+
 **English** | [Русский](README.ru.md)
 
 A handy list of all your Claude Code chats, right in the terminal.
