@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 """TUI со списком всех чатов Claude Code из ~/.claude/projects.
 
 Enter — продолжить чат (cd в его каталог + claude --resume; удалённый каталог

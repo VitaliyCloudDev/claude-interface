@@ -9,8 +9,10 @@
 Нужен только Python 3, внешних зависимостей нет.
 
 ```bash
-ln -s "$PWD/cc-sessions.py" ~/.local/bin/claude-interface
+./install.sh
 ```
+
+Скрипт создаёт симлинк `~/.local/bin/claude-interface` → `cc-sessions.py` и подсказывает, если `~/.local/bin` нет в `PATH`. После переноса каталога запустите его ещё раз.
 
 ## Использование
 
@@ -42,3 +44,7 @@ claude-interface --list   # просто напечатать список
 ```json
 { "cleanupPeriodDays": 3650 }
 ```
+
+## Лицензия
+
+[GPL-3.0](LICENSE). Форки и изменённые версии можно распространять только с открытым исходным кодом под той же лицензией.
