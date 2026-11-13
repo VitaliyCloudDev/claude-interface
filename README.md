@@ -8,6 +8,7 @@ Why it beats the built-in `/resume`:
 
 - **All chats in one list** — from every directory at once. Each shows its title, directory and time; the selected one also shows its first prompt.
 - **Easy navigation** — arrows or `j`/`k`, paging, and a quick word filter (`/`).
+- **Hidden chats too** — every chat log on disk is listed, including ones the built-in Claude Code interface doesn't show.
 - **Any chat opens** — even if its directory was deleted or moved.
 
 ## Installation
