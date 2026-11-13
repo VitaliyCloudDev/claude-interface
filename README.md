@@ -2,9 +2,13 @@
 
 **English** | [Русский](README.ru.md)
 
-A single TUI listing every Claude Code chat from every directory. Find the chat you need and resume it — even if the directory it was started in has been deleted or moved.
+A handy list of all your Claude Code chats, right in the terminal.
 
-The built-in `/resume` → Ctrl+A also shows chats from all projects, but it can't open a chat whose directory no longer exists.
+Why it beats the built-in `/resume`:
+
+- **All chats in one list** — from every directory at once. Each shows its title, directory and time; the selected one also shows its first prompt.
+- **Easy navigation** — arrows or `j`/`k`, paging, and a quick word filter (`/`).
+- **Any chat opens** — even if its directory was deleted or moved.
 
 ## Installation
 
