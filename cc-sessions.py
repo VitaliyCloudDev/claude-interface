@@ -70,6 +70,15 @@ def load():
     return sorted((s for s in items if s), key=lambda s: -s['mtime'])
 
 
+def cols(when, mark, name, model, ctx, cost, lines, cwd):
+    return (f"{when:<11} {mark} {name[:45]:<45} │ {model:<6} │ {ctx:>5} │ "
+            f"{cost:>6} │ {lines:>5} │ {cwd}")
+
+
+HEADER = cols('Изменён', ' ', 'Название', 'Модель', 'Конт.', 'Цена',
+              'Строк', 'Каталог')
+
+
 def row(s):
     mark = ' ' if os.path.isdir(s['cwd']) else '✗'
     when = time.strftime('%d.%m %H:%M', time.localtime(s['mtime']))
@@ -85,8 +94,7 @@ def row(s):
     add, rm = c.get('totalLinesAdded', 0), c.get('totalLinesRemoved', 0)
     lines = f'+{add}' if add >= rm else f'-{rm}'
     lines = lines if add or rm else ''
-    return (f"{when} {mark} {s['name'][:45]:<45} │ {model:<5} │ {ctx:>4} │ "
-            f"{cost:>6} │ {lines:>5} │ {cwd}")
+    return cols(when, mark, s['name'], model, ctx, cost, lines, cwd)
 
 
 def match(s, q):
@@ -102,14 +110,15 @@ def tui(scr, sessions):
         shown = [s for s in sessions if match(s, q)]
         pos = max(0, min(pos, len(shown) - 1))
         h, w = scr.getmaxyx()
-        body = h - 4
+        body = h - 5
         top = min(max(top, pos - body + 1), pos)
         scr.erase()
         head = f' Чаты Claude Code: {len(shown)}/{len(sessions)}   ✗ — каталога нет'
         scr.addnstr(0, 0, head.ljust(w), w - 1, curses.A_REVERSE)
+        scr.addnstr(1, 0, HEADER, w - 1, curses.A_BOLD)
         for i, s in enumerate(shown[top:top + body]):
             attr = curses.A_REVERSE if top + i == pos else 0
-            scr.addnstr(1 + i, 0, row(s).ljust(w), w - 1, attr)
+            scr.addnstr(2 + i, 0, row(s).ljust(w), w - 1, attr)
         if shown:
             cur = shown[pos]
             scr.addnstr(h - 3, 0, f" {cur['id']}  {cur['cwd']}", w - 1,
@@ -160,6 +169,7 @@ def resume(s):
 def main():
     sessions = load()
     if '--list' in sys.argv:
+        print(HEADER + '  ID')
         print('\n'.join(row(s) + '  ' + s['id'] for s in sessions), flush=True)
         return
     os.environ.setdefault('ESCDELAY', '25')  # иначе Esc ждёт 1 с
