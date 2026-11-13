@@ -158,7 +158,7 @@ def resume(s):
 def main():
     sessions = load()
     if '--list' in sys.argv:
-        print('\n'.join(row(s) + '  ' + s['id'] for s in sessions))
+        print('\n'.join(row(s) + '  ' + s['id'] for s in sessions), flush=True)
         return
     os.environ.setdefault('ESCDELAY', '25')  # иначе Esc ждёт 1 с
     chosen = curses.wrapper(tui, sessions)
@@ -171,3 +171,7 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:  # Ctrl+C — тихий выход без трейса
         sys.exit(130)
+    except BrokenPipeError:  # --list | head: читатель закрыл канал
+        # Рецепт из доков signal: иначе трейс выпадет при сбросе stdout.
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        sys.exit(1)
