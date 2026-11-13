@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""TUI со списком всех чатов Claude Code (~/.claude/projects) и Codex
-(~/.codex/sessions).
+"""TUI listing all Claude Code (~/.claude/projects) and Codex
+(~/.codex/sessions) chats.
 
-Enter — продолжить чат (cd в его каталог + claude --resume / codex resume;
-удалённый каталог создаётся заново), / — фильтр, ←→ или клик по шапке —
-сортировка (повторный клик или r — обратный порядок), q/Esc — выход.
---list — печать без TUI.
+Enter — resume the chat (cd into its directory + claude --resume / codex
+resume; a deleted directory is recreated), / — filter, ←→ or header click —
+sort (click again or r — reverse order), q/Esc — quit.
+--list — print without TUI.
 """
 import bisect
 import curses
@@ -21,10 +21,10 @@ CODEX = Path.home() / '.codex'
 
 
 def parse(path):
-    """Достаёт из jsonl-лога cwd, заголовок, первый промпт и статистику."""
+    """Extract cwd, title, first prompt and stats from a jsonl log."""
     s = {'app': 'claude', 'id': path.stem, 'cwd': '', 'title': '', 'ai': '', 'first': '',
          'mtime': path.stat().st_mtime, 'cost': None, 'ctx': None}
-    last = ''  # последний ответ модели: из его usage — текущий контекст
+    last = ''  # last model reply: its usage gives the current context
     with open(path, encoding='utf-8', errors='replace') as f:
         for line in f:
             if ('"type":"assistant"' in line and '"usage"' in line
@@ -32,7 +32,7 @@ def parse(path):
                     and '"model":"<synthetic>"' not in line):
                 last = line
                 continue
-            # Быстрый фильтр: json.loads только для нужных строк.
+            # Fast filter: json.loads only the lines we need.
             if not ('"cwd"' in line or 'title' in line
                     or '"cost-state"' in line):
                 continue
@@ -42,8 +42,8 @@ def parse(path):
                 continue
             t = d.get('type')
             if t == 'cost-state':
-                # Итог накопительный; после отката истории (rewind) он
-                # уменьшается, а максимум — реально потраченное.
+                # The total is cumulative; after a rewind it drops, so the
+                # maximum is what was actually spent.
                 if d.get('totalCostUSD', 0) >= (s['cost'] or {}).get(
                         'totalCostUSD', -1):
                     s['cost'] = d
@@ -66,15 +66,15 @@ def parse(path):
     except (ValueError, KeyError, TypeError):
         pass
     usage = (s['cost'] or {}).get('modelUsage') or {}
-    # Основная модель — самая дорогая (haiku крутится в каждом чате фоном).
+    # Main model is the costliest one (haiku runs in every chat in background).
     m = max(usage, key=lambda m: usage[m].get('costUSD', 0), default='')
     s['model'] = m.split('-')[1] if m.count('-') else m
     s['name'] = s['title'] or s['ai'] or s['first'] or '(untitled)'
-    return s if s['cwd'] else None  # пустые сессии без сообщений не нужны
+    return s if s['cwd'] else None  # skip empty sessions
 
 
 def parse_codex(path):
-    """То же для rollout-лога Codex; стоимости и диффа в нём нет."""
+    """Same for a Codex rollout log; it has no cost or diff."""
     s = {'app': 'codex', 'id': '', 'cwd': '', 'title': '', 'ai': '',
          'first': '', 'mtime': path.stat().st_mtime, 'cost': None,
          'ctx': None, 'model': ''}
@@ -95,21 +95,21 @@ def parse_codex(path):
                 s['model'] = (p.get('model') or '').split('-')[-1]
             elif p.get('type') == 'token_count' and p.get('info'):
                 s['ctx'] = p['info']['last_token_usage']['input_tokens']
-            # Реальный ввод — UserMessage; role=user в response_item — это
-            # ещё и подставленные AGENTS.md и environment_context.
+            # Real input is UserMessage; role=user in response_item also
+            # includes injected AGENTS.md and environment_context.
             elif (p.get('type') == 'item_completed' and not s['first']
                   and p.get('item', {}).get('type') == 'UserMessage'):
                 c = p['item'].get('content') or []
                 s['first'] = ' '.join(' '.join(
                     x.get('text', '') for x in c if isinstance(x, dict)).split())
-    return s if s['id'] and s['first'] else None  # пустые не нужны
+    return s if s['id'] and s['first'] else None  # skip empty ones
 
 
 def load_codex():
     names = {}
     try:
         with open(CODEX / 'session_index.jsonl', encoding='utf-8') as f:
-            for line in f:  # последняя запись — актуальное имя
+            for line in f:  # the last record is the current name
                 try:
                     d = json.loads(line)
                 except ValueError:
@@ -117,8 +117,8 @@ def load_codex():
                 names[d.get('id')] = d.get('thread_name') or ''
     except OSError:
         pass
-    # Один тред может продолжиться в новом файле с тем же id: идём по
-    # времени создания, первый промпт берём из самого раннего файла.
+    # A thread may continue in a new file with the same id: go in creation
+    # order and take the first prompt from the earliest file.
     out = {}
     files = [*CODEX.glob('sessions/*/*/*/*.jsonl'),
              *CODEX.glob('archived_sessions/*.jsonl')]
@@ -132,7 +132,7 @@ def load_codex():
 
 
 def load():
-    # Только верхний уровень: */<id>/subagents/*.jsonl — это сабагенты.
+    # Top level only: */<id>/subagents/*.jsonl are subagents.
     items = [parse(p) for p in ROOT.glob('*/*.jsonl')] + load_codex()
     return sorted((s for s in items if s), key=lambda s: -s['mtime'])
 
@@ -143,14 +143,14 @@ def cols(when, mark, name, model, ctx, cost, lines, cwd):
 
 
 LABELS = ('Modified', 'Title', 'Model', 'Ctx', 'Cost', 'Diff', 'Directory')
-# Ключ сортировки каждой колонки и порядок по умолчанию (числа — по убыванию).
+# Sort key of each column and default order (numbers descending).
 SORTS = (
     (lambda s: s['mtime'], True),
     (lambda s: s['name'].lower(), False),
     (lambda s: s['model'], False),
     (lambda s: s['ctx'] or 0, True),
     (lambda s: (s['cost'] or {}).get('totalCostUSD', 0), True),
-    (lambda s: max((s['cost'] or {}).get(k, 0)  # то число, что в колонке
+    (lambda s: max((s['cost'] or {}).get(k, 0)  # as shown in the column
                    for k in ('totalLinesAdded', 'totalLinesRemoved')), True),
     (lambda s: s['cwd'], False),
 )
@@ -168,9 +168,9 @@ BARS = [i for i, c in enumerate(HEADER) if c == '│']
 
 
 def column(x):
-    """Номер колонки шапки под экранной позицией x."""
+    """Header column index under screen position x."""
     i = bisect.bisect(BARS, x)
-    return i + 1 if i else int(x > 12)  # до первой │ — Modified и Title
+    return i + 1 if i else int(x > 12)  # left of first │: Modified, Title
 
 
 def row(s):
@@ -180,7 +180,7 @@ def row(s):
     c = s['cost'] or {}
     ctx = f"{s['ctx'] / 1000:.0f}k" if s['ctx'] else ''
     cost = f"${c['totalCostUSD']:.2f}" if c else ''
-    # Удалённые строки — только если их больше, чем добавленных.
+    # Show removed lines only if there are more of them than added.
     add, rm = c.get('totalLinesAdded', 0), c.get('totalLinesRemoved', 0)
     lines = f'+{add}' if add >= rm else f'-{rm}'
     lines = lines if add or rm else ''
@@ -198,13 +198,13 @@ def tui(scr, sessions):
     curses.use_default_colors()
     curses.mousemask(curses.BUTTON1_CLICKED | curses.BUTTON4_PRESSED
                      | curses.BUTTON5_PRESSED)
-    curses.mouseinterval(0)  # без задержки на распознавание двойного клика
+    curses.mouseinterval(0)  # no delay for double-click detection
     q, pos, top, typing = '', 0, 0, False
     sort, rev, keep = 0, True, None
     while True:
         shown = sorted((s for s in sessions if match(s, q)),
                        key=SORTS[sort][0], reverse=rev)
-        # После смены сортировки остаёмся на том же чате.
+        # Keep the same chat selected after re-sorting.
         pos = next((i for i, s in enumerate(shown) if s is keep), pos)
         keep = None
         pos = max(0, min(pos, len(shown) - 1))
@@ -238,7 +238,7 @@ def tui(scr, sessions):
             continue
         if k in ('q', '\x1b'):
             return None
-        new = None  # новая (колонка, порядок) сортировки
+        new = None  # new sort (column, order)
         if k == '/':
             typing = True
         elif k in (curses.KEY_UP, 'k'):
@@ -261,7 +261,7 @@ def tui(scr, sessions):
         elif k == curses.KEY_MOUSE:
             try:
                 _, x, y, _, b = curses.getmouse()
-            except curses.error:  # событие вне маски
+            except curses.error:  # event outside the mask
                 continue
             if b & curses.BUTTON4_PRESSED:
                 pos -= 3
@@ -281,8 +281,8 @@ def tui(scr, sessions):
 def resume(s):
     cwd = s['cwd']
     if not os.path.isdir(cwd):
-        # claude ищет чат по каталогу запуска, поэтому воссоздаём его пустым
-        # (codex находит по id, но тоже работает в каталоге запуска).
+        # claude looks up the chat by launch directory, so recreate it empty
+        # (codex finds it by id, but also runs in the launch directory).
         print(f'Directory {cwd} is gone — recreating it empty to open the chat.')
         os.makedirs(cwd)
     os.chdir(cwd)
@@ -297,7 +297,7 @@ def main():
         print(HEADER + '  ID')
         print('\n'.join(row(s) + '  ' + s['id'] for s in sessions), flush=True)
         return
-    os.environ.setdefault('ESCDELAY', '25')  # иначе Esc ждёт 1 с
+    os.environ.setdefault('ESCDELAY', '25')  # otherwise Esc waits 1 s
     chosen = curses.wrapper(tui, sessions)
     if chosen:
         resume(chosen)
@@ -306,9 +306,9 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except KeyboardInterrupt:  # Ctrl+C — тихий выход без трейса
+    except KeyboardInterrupt:  # Ctrl+C — quiet exit without traceback
         sys.exit(130)
-    except BrokenPipeError:  # --list | head: читатель закрыл канал
-        # Рецепт из доков signal: иначе трейс выпадет при сбросе stdout.
+    except BrokenPipeError:  # --list | head: reader closed the pipe
+        # Recipe from the signal docs: else the stdout flush tracebacks.
         os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
         sys.exit(1)
