@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""TUI со списком всех чатов Claude Code из ~/.claude/projects.
+"""TUI со списком всех чатов Claude Code (~/.claude/projects) и Codex
+(~/.codex/sessions).
 
-Enter — продолжить чат (cd в его каталог + claude --resume; удалённый каталог
-создаётся заново), / — фильтр, q/Esc — выход. --list — печать без TUI.
+Enter — продолжить чат (cd в его каталог + claude --resume / codex resume;
+удалённый каталог создаётся заново), / — фильтр, q/Esc — выход.
+--list — печать без TUI.
 """
 import curses
 import json
@@ -13,11 +15,12 @@ import time
 from pathlib import Path
 
 ROOT = Path.home() / '.claude' / 'projects'
+CODEX = Path.home() / '.codex'
 
 
 def parse(path):
     """Достаёт из jsonl-лога cwd, заголовок, первый промпт и статистику."""
-    s = {'id': path.stem, 'cwd': '', 'title': '', 'ai': '', 'first': '',
+    s = {'app': 'claude', 'id': path.stem, 'cwd': '', 'title': '', 'ai': '', 'first': '',
          'mtime': path.stat().st_mtime, 'cost': None, 'ctx': None}
     last = ''  # последний ответ модели: из его usage — текущий контекст
     with open(path, encoding='utf-8', errors='replace') as f:
@@ -64,18 +67,75 @@ def parse(path):
     return s if s['cwd'] else None  # пустые сессии без сообщений не нужны
 
 
+def parse_codex(path):
+    """То же для rollout-лога Codex; стоимости и диффа в нём нет."""
+    s = {'app': 'codex', 'id': '', 'cwd': '', 'title': '', 'ai': '',
+         'first': '', 'mtime': path.stat().st_mtime, 'cost': None,
+         'ctx': None, 'model': ''}
+    with open(path, encoding='utf-8', errors='replace') as f:
+        for line in f:
+            if not ('"session_meta"' in line or '"turn_context"' in line
+                    or '"token_count"' in line or 'UserMessage' in line):
+                continue
+            try:
+                d = json.loads(line)
+            except ValueError:
+                continue
+            p = d.get('payload') or {}
+            if d.get('type') == 'session_meta':
+                s['id'] = s['id'] or p.get('id', '')
+                s['cwd'] = s['cwd'] or p.get('cwd', '')
+            elif d.get('type') == 'turn_context':
+                s['model'] = (p.get('model') or '').split('-')[-1]
+            elif p.get('type') == 'token_count' and p.get('info'):
+                s['ctx'] = p['info']['last_token_usage']['input_tokens']
+            # Реальный ввод — UserMessage; role=user в response_item — это
+            # ещё и подставленные AGENTS.md и environment_context.
+            elif (p.get('type') == 'item_completed' and not s['first']
+                  and p.get('item', {}).get('type') == 'UserMessage'):
+                c = p['item'].get('content') or []
+                s['first'] = ' '.join(' '.join(
+                    x.get('text', '') for x in c if isinstance(x, dict)).split())
+    return s if s['id'] and s['first'] else None  # пустые не нужны
+
+
+def load_codex():
+    names = {}
+    try:
+        with open(CODEX / 'session_index.jsonl', encoding='utf-8') as f:
+            for line in f:  # последняя запись — актуальное имя
+                try:
+                    d = json.loads(line)
+                except ValueError:
+                    continue
+                names[d.get('id')] = d.get('thread_name') or ''
+    except OSError:
+        pass
+    # Один тред может продолжиться в новом файле с тем же id: идём по
+    # времени создания, первый промпт берём из самого раннего файла.
+    out = {}
+    for p in sorted(CODEX.glob('sessions/*/*/*/*.jsonl'), key=lambda p: p.name):
+        s = parse_codex(p)
+        if s:
+            s['first'] = out.get(s['id'], s)['first']
+            s['name'] = names.get(s['id']) or s['first']
+            out[s['id']] = s
+    return list(out.values())
+
+
 def load():
     # Только верхний уровень: */<id>/subagents/*.jsonl — это сабагенты.
-    items = (parse(p) for p in ROOT.glob('*/*.jsonl'))
+    items = [parse(p) for p in ROOT.glob('*/*.jsonl')] + load_codex()
     return sorted((s for s in items if s), key=lambda s: -s['mtime'])
 
 
-def cols(when, mark, name, model, ctx, cost, lines, cwd):
-    return (f"{when:<11} {mark} {name[:45]:<45} │ {model:<6} │ {ctx:>5} │ "
+def cols(when, mark, name, app, model, ctx, cost, lines, cwd):
+    return (f"{when:<11} {mark} {name[:45]:<45} │ {app:<6} │ {model:<6} │ "
+            f"{ctx:>5} │ "
             f"{cost:>6} │ {lines:>5} │ {cwd}")
 
 
-HEADER = cols('Modified', ' ', 'Title', 'Model', 'Ctx', 'Cost', 'Diff',
+HEADER = cols('Modified', ' ', 'Title', 'App', 'Model', 'Ctx', 'Cost', 'Diff',
               'Directory')
 
 
@@ -88,17 +148,19 @@ def row(s):
     # Основная модель — самая дорогая (haiku крутится в каждом чате фоном).
     model = max(usage, key=lambda m: usage[m].get('costUSD', 0), default='')
     model = model.split('-')[1] if model.count('-') else model
+    model = s.get('model') or model
     ctx = f"{s['ctx'] / 1000:.0f}k" if s['ctx'] else ''
     cost = f"${c['totalCostUSD']:.2f}" if c else ''
     # Удалённые строки — только если их больше, чем добавленных.
     add, rm = c.get('totalLinesAdded', 0), c.get('totalLinesRemoved', 0)
     lines = f'+{add}' if add >= rm else f'-{rm}'
     lines = lines if add or rm else ''
-    return cols(when, mark, s['name'], model, ctx, cost, lines, cwd)
+    return cols(when, mark, s['name'], s['app'], model, ctx, cost, lines, cwd)
 
 
 def match(s, q):
-    hay = ' '.join((s['name'], s['first'], s['cwd'], s['id'])).lower()
+    hay = ' '.join((s['name'], s['first'], s['cwd'], s['id'],
+                    s['app'])).lower()
     return all(w in hay for w in q.lower().split())
 
 
@@ -116,7 +178,7 @@ def tui(scr, sessions):
         body = h - 5
         top = min(max(top, pos - body + 1), pos)
         scr.erase()
-        head = (f' Claude Code chats: {len(shown)}/{len(sessions)}'
+        head = (f' Chats: {len(shown)}/{len(sessions)}'
                 '   ✗ — directory missing')
         scr.addnstr(0, 0, head.ljust(w), w - 1, curses.A_REVERSE)
         scr.addnstr(1, 0, HEADER, w - 1, curses.A_BOLD)
@@ -174,11 +236,14 @@ def tui(scr, sessions):
 def resume(s):
     cwd = s['cwd']
     if not os.path.isdir(cwd):
-        # claude ищет чат по каталогу запуска, поэтому воссоздаём его пустым.
+        # claude ищет чат по каталогу запуска, поэтому воссоздаём его пустым
+        # (codex находит по id, но тоже работает в каталоге запуска).
         print(f'Directory {cwd} is gone — recreating it empty to open the chat.')
         os.makedirs(cwd)
     os.chdir(cwd)
-    os.execvp('claude', ['claude', '--resume', s['id']])
+    cmd = (['codex', 'resume', s['id']] if s['app'] == 'codex'
+           else ['claude', '--resume', s['id']])
+    os.execvp(cmd[0], cmd)
 
 
 def main():
