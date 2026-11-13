@@ -60,7 +60,7 @@ def parse(path):
             'cache_creation_input_tokens'))
     except (ValueError, KeyError, TypeError):
         pass
-    s['name'] = s['title'] or s['ai'] or s['first'] or '(без названия)'
+    s['name'] = s['title'] or s['ai'] or s['first'] or '(untitled)'
     return s if s['cwd'] else None  # пустые сессии без сообщений не нужны
 
 
@@ -75,8 +75,8 @@ def cols(when, mark, name, model, ctx, cost, lines, cwd):
             f"{cost:>6} │ {lines:>5} │ {cwd}")
 
 
-HEADER = cols('Изменён', ' ', 'Название', 'Модель', 'Конт.', 'Цена',
-              'Строк', 'Каталог')
+HEADER = cols('Modified', ' ', 'Title', 'Model', 'Ctx', 'Cost', 'Lines',
+              'Directory')
 
 
 def row(s):
@@ -113,7 +113,8 @@ def tui(scr, sessions):
         body = h - 5
         top = min(max(top, pos - body + 1), pos)
         scr.erase()
-        head = f' Чаты Claude Code: {len(shown)}/{len(sessions)}   ✗ — каталога нет'
+        head = (f' Claude Code chats: {len(shown)}/{len(sessions)}'
+                '   ✗ — directory missing')
         scr.addnstr(0, 0, head.ljust(w), w - 1, curses.A_REVERSE)
         scr.addnstr(1, 0, HEADER, w - 1, curses.A_BOLD)
         for i, s in enumerate(shown[top:top + body]):
@@ -125,7 +126,7 @@ def tui(scr, sessions):
                         curses.A_DIM)
             scr.addnstr(h - 2, 0, ' > ' + cur['first'], w - 1, curses.A_DIM)
         foot = (f' /{q}_' if typing else
-                f' ↑↓ PgUp/PgDn  Enter открыть  / фильтр [{q}]  q выход')
+                f' ↑↓ PgUp/PgDn  Enter open  / filter [{q}]  q quit')
         scr.addnstr(h - 1, 0, foot, w - 1, curses.A_BOLD)
         k = scr.get_wch()
         if typing:
@@ -160,7 +161,7 @@ def resume(s):
     cwd = s['cwd']
     if not os.path.isdir(cwd):
         # claude ищет чат по каталогу запуска, поэтому воссоздаём его пустым.
-        print(f'Каталог {cwd} удалён — создаю пустой, чтобы открыть чат.')
+        print(f'Directory {cwd} is gone — recreating it empty to open the chat.')
         os.makedirs(cwd)
     os.chdir(cwd)
     os.execvp('claude', ['claude', '--resume', s['id']])
