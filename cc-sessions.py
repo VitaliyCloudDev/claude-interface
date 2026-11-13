@@ -137,19 +137,16 @@ def load():
     return sorted((s for s in items if s), key=lambda s: -s['mtime'])
 
 
-def cols(when, mark, name, app, model, ctx, cost, lines, cwd):
-    return (f"{when:<11} {mark} {name[:45]:<45} │ {app:<6} │ {model:<6} │ "
-            f"{ctx:>5} │ "
+def cols(when, mark, name, model, ctx, cost, lines, cwd):
+    return (f"{when:<11} {mark} {name[:45]:<45} │ {model:<6} │ {ctx:>5} │ "
             f"{cost:>6} │ {lines:>5} │ {cwd}")
 
 
-LABELS = ('Modified', 'Title', 'App', 'Model', 'Ctx', 'Cost', 'Diff',
-          'Directory')
+LABELS = ('Modified', 'Title', 'Model', 'Ctx', 'Cost', 'Diff', 'Directory')
 # Ключ сортировки каждой колонки и порядок по умолчанию (числа — по убыванию).
 SORTS = (
     (lambda s: s['mtime'], True),
     (lambda s: s['name'].lower(), False),
-    (lambda s: s['app'], False),
     (lambda s: s['model'], False),
     (lambda s: s['ctx'] or 0, True),
     (lambda s: (s['cost'] or {}).get('totalCostUSD', 0), True),
@@ -187,7 +184,7 @@ def row(s):
     add, rm = c.get('totalLinesAdded', 0), c.get('totalLinesRemoved', 0)
     lines = f'+{add}' if add >= rm else f'-{rm}'
     lines = lines if add or rm else ''
-    return cols(when, mark, s['name'], s['app'], s['model'], ctx, cost, lines, cwd)
+    return cols(when, mark, s['name'], s['model'], ctx, cost, lines, cwd)
 
 
 def match(s, q):
