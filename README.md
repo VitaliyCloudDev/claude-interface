@@ -1,50 +1,52 @@
 # claude-interface
 
-Список всех чатов Claude Code из всех каталогов в одном TUI. Можно найти нужный чат и продолжить его, даже если каталог, где он был начат, удалили или переместили.
+**English** | [Русский](README.ru.md)
 
-Встроенный `/resume` → Ctrl+A тоже показывает чаты всех проектов, но чат из удалённого каталога через него не открыть.
+A single TUI listing every Claude Code chat from every directory. Find the chat you need and resume it — even if the directory it was started in has been deleted or moved.
 
-## Установка
+The built-in `/resume` → Ctrl+A also shows chats from all projects, but it can't open a chat whose directory no longer exists.
 
-Нужен только Python 3, внешних зависимостей нет.
+## Installation
+
+Only Python 3 is required, no external dependencies.
 
 ```bash
 ./install.sh
 ```
 
-Скрипт создаёт симлинк `~/.local/bin/claude-interface` → `cc-sessions.py` и подсказывает, если `~/.local/bin` нет в `PATH`. После переноса каталога запустите его ещё раз.
+The script creates a symlink `~/.local/bin/claude-interface` → `cc-sessions.py` and warns if `~/.local/bin` is not in your `PATH`. Run it again after moving the repository.
 
-## Использование
+## Usage
 
 ```bash
 claude-interface          # TUI
-claude-interface --list   # просто напечатать список
+claude-interface --list   # just print the list
 ```
 
-В строке выводятся время последнего изменения, название чата, каталог и id. Если каталога больше нет, в строке стоит `✗`. Внизу экрана показаны id, полный путь и первый промпт выбранного чата.
+Each row shows the last modification time, chat title, directory and id. A `✗` marks chats whose directory no longer exists. The bottom of the screen shows the id, full path and first prompt of the selected chat.
 
-| Клавиша | Действие |
+| Key | Action |
 |---|---|
-| ↑↓ / `j` `k` | перемещение |
-| PgUp / PgDn, Home / End | по страницам, в начало / в конец |
-| `/` | фильтр: слова через пробел ищутся в названии, первом промпте, пути и id; Enter или Esc — закончить ввод |
-| Enter | открыть чат |
-| `q` / Esc | выход |
+| ↑↓ / `j` `k` | move |
+| PgUp / PgDn, Home / End | page up/down, jump to start / end |
+| `/` | filter: space-separated words are matched against title, first prompt, path and id; Enter or Esc finishes input |
+| Enter | open chat |
+| `q` / Esc | quit |
 
-По Enter выполняется `cd <каталог> && claude --resume <id>`. Claude ищет чат по каталогу запуска, поэтому удалённый каталог создаётся заново, пустым.
+Enter runs `cd <directory> && claude --resume <id>`. Claude looks up chats by the launch directory, so a deleted directory is recreated, empty.
 
-## Откуда берутся данные
+## Where the data comes from
 
-- Логи лежат в `~/.claude/projects/<каталог>/<session-id>.jsonl`. Берутся только файлы верхнего уровня, логи сабагентов пропускаются.
-- Каталог и первый промпт берутся из первого сообщения пользователя. Название — то, что задано через `/rename`, иначе автоматическое название, иначе первый промпт.
-- Пустые чаты, в которых нет ни одного сообщения, не показываются.
+- Logs live in `~/.claude/projects/<directory>/<session-id>.jsonl`. Only top-level files are read; subagent logs are skipped.
+- Directory and first prompt come from the first user message. The title is the one set via `/rename`, otherwise the auto-generated title, otherwise the first prompt.
+- Empty chats with no messages are hidden.
 
-По умолчанию Claude Code удаляет логи старше 30 дней. Чтобы история хранилась дольше, увеличьте `cleanupPeriodDays` в `~/.claude/settings.json`:
+By default Claude Code deletes logs older than 30 days. To keep history longer, raise `cleanupPeriodDays` in `~/.claude/settings.json`:
 
 ```json
 { "cleanupPeriodDays": 3650 }
 ```
 
-## Лицензия
+## License
 
-[GPL-3.0](LICENSE). Форки и изменённые версии можно распространять только с открытым исходным кодом под той же лицензией.
+[GPL-3.0](LICENSE). Forks and modified versions may only be distributed as open source under the same license.
