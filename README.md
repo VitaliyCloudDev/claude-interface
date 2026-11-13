@@ -11,8 +11,7 @@
 >
 > **claude-interface shows every chat log on disk in one list — and opens any of them**, even if its directory is gone.
 
-> [!TIP]
-> **Dead simple:** a single Python file, no dependencies — only the standard library. Download it and run.
+> 🔥 **Dead simple:** a single Python file, no dependencies — only the standard library. Download it and run.
 
 A handy list of all your Claude Code and Codex chats, right in the terminal.
 
@@ -69,12 +68,6 @@ Enter runs `cd <directory> && claude --resume <id>` (for Codex — `codex resume
 - Claude Code: `~/.claude/projects/<directory>/<session-id>.jsonl`. Only top-level files are read; subagent logs are skipped. The title is the one set via `/rename`, otherwise the auto-generated title, otherwise the first prompt.
 - Codex: `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` and `~/.codex/archived_sessions/` (`codex resume` offers to unarchive). Titles come from `~/.codex/session_index.jsonl`; a thread continued in a new file is shown as one chat.
 - Empty chats with no messages are hidden.
-
-By default Claude Code deletes logs older than 30 days. To keep history longer, raise `cleanupPeriodDays` in `~/.claude/settings.json`:
-
-```json
-{ "cleanupPeriodDays": 3650 }
-```
 
 ## License
 
