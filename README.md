@@ -4,9 +4,17 @@
 
 **English** | [Русский](README.ru.md)
 
-A handy list of all your Claude Code and Codex chats, right in the terminal.
+## Tired of losing your agent chats? claude-interface finds them all!
 
-**The main thing: no chat gets lost.** The Claude Code and Codex clients show only part of your history — chats from other directories, deleted or moved projects, archived threads are hard or impossible to find there. claude-interface shows every chat log on disk in one list and opens any of them.
+> [!IMPORTANT]
+> **No chat gets lost.** The Claude Code and Codex clients show only part of your history: chats from other directories, from deleted or moved projects, archived threads are hard or impossible to find there.
+>
+> **claude-interface shows every chat log on disk in one list — and opens any of them**, even if its directory is gone.
+
+> [!TIP]
+> **Dead simple:** a single Python file, no dependencies — only the standard library. Download it and run.
+
+A handy list of all your Claude Code and Codex chats, right in the terminal.
 
 Why it beats the built-in `/resume`:
 
