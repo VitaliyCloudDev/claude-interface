@@ -109,7 +109,7 @@ def tui(scr, sessions):
         scr.addnstr(0, 0, head.ljust(w), w - 1, curses.A_REVERSE)
         for i, s in enumerate(shown[top:top + body]):
             attr = curses.A_REVERSE if top + i == pos else 0
-            scr.addnstr(1 + i, 0, row(s), w - 1, attr)
+            scr.addnstr(1 + i, 0, row(s).ljust(w), w - 1, attr)
         if shown:
             cur = shown[pos]
             scr.addnstr(h - 3, 0, f" {cur['id']}  {cur['cwd']}", w - 1,
