@@ -114,7 +114,9 @@ def load_codex():
     # Один тред может продолжиться в новом файле с тем же id: идём по
     # времени создания, первый промпт берём из самого раннего файла.
     out = {}
-    for p in sorted(CODEX.glob('sessions/*/*/*/*.jsonl'), key=lambda p: p.name):
+    files = [*CODEX.glob('sessions/*/*/*/*.jsonl'),
+             *CODEX.glob('archived_sessions/*.jsonl')]
+    for p in sorted(files, key=lambda p: p.name):
         s = parse_codex(p)
         if s:
             s['first'] = out.get(s['id'], s)['first']
