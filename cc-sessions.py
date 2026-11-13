@@ -16,20 +16,33 @@ ROOT = Path.home() / '.claude' / 'projects'
 
 
 def parse(path):
-    """Достаёт из jsonl-лога cwd, заголовок и первый промпт."""
+    """Достаёт из jsonl-лога cwd, заголовок, первый промпт и статистику."""
     s = {'id': path.stem, 'cwd': '', 'title': '', 'ai': '', 'first': '',
-         'mtime': path.stat().st_mtime}
+         'mtime': path.stat().st_mtime, 'cost': None, 'ctx': None}
+    last = ''  # последний ответ модели: из его usage — текущий контекст
     with open(path, encoding='utf-8', errors='replace') as f:
         for line in f:
+            if ('"type":"assistant"' in line and '"usage"' in line
+                    and '"isSidechain":true' not in line
+                    and '"model":"<synthetic>"' not in line):
+                last = line
+                continue
             # Быстрый фильтр: json.loads только для нужных строк.
-            if not ('"cwd"' in line or 'title' in line):
+            if not ('"cwd"' in line or 'title' in line
+                    or '"cost-state"' in line):
                 continue
             try:
                 d = json.loads(line)
             except ValueError:
                 continue
             t = d.get('type')
-            if t == 'custom-title':
+            if t == 'cost-state':
+                # Итог накопительный; после отката истории (rewind) он
+                # уменьшается, а максимум — реально потраченное.
+                if d.get('totalCostUSD', 0) >= (s['cost'] or {}).get(
+                        'totalCostUSD', -1):
+                    s['cost'] = d
+            elif t == 'custom-title':
                 s['title'] = d.get('customTitle') or s['title']
             elif t == 'ai-title':
                 s['ai'] = d.get('aiTitle') or s['ai']
@@ -40,6 +53,13 @@ def parse(path):
                     c = ' '.join(x.get('text', '') for x in c
                                  if isinstance(x, dict))
                 s['first'] = ' '.join(str(c or '').split())
+    try:
+        u = json.loads(last)['message']['usage']
+        s['ctx'] = sum(u.get(k, 0) for k in (
+            'input_tokens', 'cache_read_input_tokens',
+            'cache_creation_input_tokens'))
+    except (ValueError, KeyError, TypeError):
+        pass
     s['name'] = s['title'] or s['ai'] or s['first'] or '(без названия)'
     return s if s['cwd'] else None  # пустые сессии без сообщений не нужны
 
@@ -54,7 +74,17 @@ def row(s):
     mark = ' ' if os.path.isdir(s['cwd']) else '✗'
     when = time.strftime('%d.%m %H:%M', time.localtime(s['mtime']))
     cwd = s['cwd'].replace(str(Path.home()), '~')
-    return f"{when} {mark} {s['name'][:60]:<60}  {cwd}"
+    c = s['cost'] or {}
+    usage = c.get('modelUsage') or {}
+    # Основная модель — самая дорогая (haiku крутится в каждом чате фоном).
+    model = max(usage, key=lambda m: usage[m].get('costUSD', 0), default='')
+    model = model.split('-')[1] if model.count('-') else model
+    ctx = f"{s['ctx'] / 1000:.0f}k" if s['ctx'] else ''
+    cost = f"${c['totalCostUSD']:.2f}" if c else ''
+    lines = (f"+{c.get('totalLinesAdded', 0)}/−{c.get('totalLinesRemoved', 0)}"
+             if c else '')
+    return (f"{when} {mark} {s['name'][:45]:<45} {model:>5} {ctx:>5} "
+            f"{cost:>7} {lines:>11}  {cwd}")
 
 
 def match(s, q):
