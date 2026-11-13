@@ -105,6 +105,9 @@ def match(s, q):
 def tui(scr, sessions):
     curses.curs_set(0)
     curses.use_default_colors()
+    curses.mousemask(curses.BUTTON1_CLICKED | curses.BUTTON4_PRESSED
+                     | curses.BUTTON5_PRESSED)
+    curses.mouseinterval(0)  # без задержки на распознавание двойного клика
     q, pos, top, typing = '', 0, 0, False
     while True:
         shown = [s for s in sessions if match(s, q)]
@@ -153,6 +156,17 @@ def tui(scr, sessions):
             pos = 0
         elif k == curses.KEY_END:
             pos = len(shown) - 1
+        elif k == curses.KEY_MOUSE:
+            try:
+                _, _, y, _, b = curses.getmouse()
+            except curses.error:  # событие вне маски
+                continue
+            if b & curses.BUTTON4_PRESSED:
+                pos -= 3
+            elif b & curses.BUTTON5_PRESSED:
+                pos += 3
+            elif 2 <= y < 2 + body and top + y - 2 < len(shown):
+                pos = top + y - 2
         elif k == '\n' and shown:
             return shown[pos]
 

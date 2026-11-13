@@ -5,7 +5,7 @@ TUI со списком всех чатов Claude Code из всех катал
 - `cc-sessions.py` — единственный файл, только stdlib (curses), без зависимостей.
 - Команда `claude-interface` — симлинк `~/.local/bin/claude-interface` → `cc-sessions.py`, создаёт `install.sh`.
 - Лицензия GPL-3.0 (`LICENSE`).
-- Режимы: без аргументов — TUI (↑↓/PgUp/PgDn, `/` фильтр, Enter открыть, q/Esc выход); `--list` — печать списка.
+- Режимы: без аргументов — TUI (↑↓/PgUp/PgDn, колесо мыши, клик, `/` фильтр, Enter открыть, q/Esc выход); `--list` — печать списка.
 
 ## Как устроено
 
