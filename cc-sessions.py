@@ -79,14 +79,14 @@ def row(s):
     # Основная модель — самая дорогая (haiku крутится в каждом чате фоном).
     model = max(usage, key=lambda m: usage[m].get('costUSD', 0), default='')
     model = model.split('-')[1] if model.count('-') else model
-    ctx = f"[{s['ctx'] / 1000:.0f}k]" if s['ctx'] else ''
-    cost = f"[${c['totalCostUSD']:.2f}]" if c else ''
+    ctx = f"{s['ctx'] / 1000:.0f}k" if s['ctx'] else ''
+    cost = f"${c['totalCostUSD']:.2f}" if c else ''
     # Удалённые строки — только если их больше, чем добавленных.
     add, rm = c.get('totalLinesAdded', 0), c.get('totalLinesRemoved', 0)
     lines = f'+{add}' if add >= rm else f'-{rm}'
     lines = lines if add or rm else ''
-    return (f"{when} {mark} {s['name'][:50]:<50} {model + ctx + cost:<20}"
-            f"{lines:>6}  {cwd}")
+    return (f"{when} {mark} {s['name'][:45]:<45} │ {model:<5} │ {ctx:>4} │ "
+            f"{cost:>6} │ {lines:>5} │ {cwd}")
 
 
 def match(s, q):
