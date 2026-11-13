@@ -1,6 +1,7 @@
 # claude-interface
 
-<img width="1278" height="707" alt="claude-interface" src="https://github.com/user-attachments/assets/93c8a8de-92c8-477d-ab1b-e79d2e9dbb5b" />
+<img width="849" height="706" alt="claude-interface" src="https://github.com/user-attachments/assets/1b601c04-f9e3-457e-8fff-21f61ad59abf" />
+
 
 **English** | [Русский](README.ru.md)
 
