@@ -212,8 +212,7 @@ def tui(scr, sessions):
         body = h - 5
         top = min(max(top, pos - body + 1), pos)
         scr.erase()
-        head = (f' Chats: {len(shown)}/{len(sessions)}'
-                '   ✗ — directory missing')
+        head = f' Chats: {len(shown)}/{len(sessions)}'
         scr.addnstr(0, 0, head.ljust(w), w - 1, curses.A_REVERSE)
         scr.addnstr(1, 0, header(sort, rev), w - 1, curses.A_BOLD)
         for i, s in enumerate(shown[top:top + body]):
