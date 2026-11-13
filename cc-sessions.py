@@ -227,6 +227,10 @@ def tui(scr, sessions):
                 f' ↑↓ PgUp/PgDn  Enter open  ←→ sort  r reverse  / filter [{q}]'
                 '  q quit')
         scr.addnstr(h - 1, 0, foot, w - 1, curses.A_BOLD)
+        if shown and not os.path.isdir(cur['cwd']):
+            lost = ' ✗ This chat has been lost — its folder no longer exists '
+            if len(foot) + len(lost) < w:
+                scr.addstr(h - 1, w - 1 - len(lost), lost, curses.A_REVERSE)
         k = scr.get_wch()
         if typing:
             if k in ('\n', '\x1b'):
