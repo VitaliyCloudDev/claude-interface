@@ -1,15 +1,15 @@
-# claude-interface
+# lostchats
 
-<img width="849" height="706" alt="claude-interface" src="https://github.com/user-attachments/assets/1b601c04-f9e3-457e-8fff-21f61ad59abf" />
+<img width="849" height="706" alt="lostchats" src="https://github.com/user-attachments/assets/1b601c04-f9e3-457e-8fff-21f61ad59abf" />
 
 [English](README.md) | **Русский**
 
-## Устали терять чаты агентов? claude-interface найдёт их все!
+## Устали терять чаты агентов? lostchats найдёт их все!
 
 > [!IMPORTANT]
 > **Чаты не теряются.** Клиенты Claude Code и Codex показывают только часть истории: чаты из других каталогов, из удалённых или перемещённых проектов, архивные треды там сложно или невозможно найти.
 >
-> **claude-interface показывает все логи чатов на диске одним списком — и открывает любой из них**, даже если каталога уже нет.
+> **lostchats показывает все логи чатов на диске одним списком — и открывает любой из них**, даже если каталога уже нет.
 
 > 🔥 **Всё просто:** один файл на Python, без зависимостей — только стандартная библиотека. Скачал и запустил.
 
@@ -29,23 +29,23 @@
 Одной командой, без клонирования:
 
 ```bash
-mkdir -p ~/.local/bin && curl -fsSL https://raw.githubusercontent.com/VitaliyCloudDev/claude-interface/main/cc-sessions.py -o ~/.local/bin/claude-interface && chmod +x ~/.local/bin/claude-interface
+mkdir -p ~/.local/bin && curl -fsSL https://raw.githubusercontent.com/VitaliyCloudDev/lostchats/main/cc-sessions.py -o ~/.local/bin/lostchats && chmod +x ~/.local/bin/lostchats
 ```
 
 Или из клона:
 
 ```bash
-git clone https://github.com/VitaliyCloudDev/claude-interface.git
-cd claude-interface && ./install.sh
+git clone https://github.com/VitaliyCloudDev/lostchats.git
+cd lostchats && ./install.sh
 ```
 
-Скрипт создаёт симлинк `~/.local/bin/claude-interface` → `cc-sessions.py` (так `git pull` сразу обновляет команду) и подсказывает, если `~/.local/bin` нет в `PATH`. После переноса каталога запустите его ещё раз.
+Скрипт создаёт симлинк `~/.local/bin/lostchats` → `cc-sessions.py` (так `git pull` сразу обновляет команду) и подсказывает, если `~/.local/bin` нет в `PATH`. После переноса каталога запустите его ещё раз.
 
 ## Использование
 
 ```bash
-claude-interface          # TUI
-claude-interface --list   # просто напечатать список
+lostchats          # TUI
+lostchats --list   # просто напечатать список
 ```
 
 Колонки: время последнего изменения, название, основная модель, размер контекста, стоимость, добавленные строки (или удалённые, если их больше) и каталог. В логах Codex нет стоимости и диффа, эти ячейки пустые. Если каталога больше нет, в строке стоит `✗`. Внизу экрана показаны id, полный путь и первый промпт выбранного чата.

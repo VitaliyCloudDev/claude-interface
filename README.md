@@ -1,15 +1,15 @@
-# claude-interface
+# lostchats
 
-<img width="849" height="706" alt="claude-interface" src="https://github.com/user-attachments/assets/1b601c04-f9e3-457e-8fff-21f61ad59abf" />
+<img width="849" height="706" alt="lostchats" src="https://github.com/user-attachments/assets/1b601c04-f9e3-457e-8fff-21f61ad59abf" />
 
 **English** | [Русский](README.ru.md)
 
-## Tired of losing your agent chats? claude-interface finds them all!
+## Tired of losing your agent chats? lostchats finds them all!
 
 > [!IMPORTANT]
 > **No chat gets lost.** The Claude Code and Codex clients show only part of your history: chats from other directories, from deleted or moved projects, archived threads are hard or impossible to find there.
 >
-> **claude-interface shows every chat log on disk in one list — and opens any of them**, even if its directory is gone.
+> **lostchats shows every chat log on disk in one list — and opens any of them**, even if its directory is gone.
 
 > 🔥 **Dead simple:** a single Python file, no dependencies — only the standard library. Download it and run.
 
@@ -29,23 +29,23 @@ Requires Python 3 on Linux or macOS (on Windows — via WSL: the standard `curse
 One command, without cloning:
 
 ```bash
-mkdir -p ~/.local/bin && curl -fsSL https://raw.githubusercontent.com/VitaliyCloudDev/claude-interface/main/cc-sessions.py -o ~/.local/bin/claude-interface && chmod +x ~/.local/bin/claude-interface
+mkdir -p ~/.local/bin && curl -fsSL https://raw.githubusercontent.com/VitaliyCloudDev/lostchats/main/cc-sessions.py -o ~/.local/bin/lostchats && chmod +x ~/.local/bin/lostchats
 ```
 
 Or from a clone:
 
 ```bash
-git clone https://github.com/VitaliyCloudDev/claude-interface.git
-cd claude-interface && ./install.sh
+git clone https://github.com/VitaliyCloudDev/lostchats.git
+cd lostchats && ./install.sh
 ```
 
-The script creates a symlink `~/.local/bin/claude-interface` → `cc-sessions.py` (so `git pull` updates it) and warns if `~/.local/bin` is not in your `PATH`. Run it again after moving the repository.
+The script creates a symlink `~/.local/bin/lostchats` → `cc-sessions.py` (so `git pull` updates it) and warns if `~/.local/bin` is not in your `PATH`. Run it again after moving the repository.
 
 ## Usage
 
 ```bash
-claude-interface          # TUI
-claude-interface --list   # just print the list
+lostchats          # TUI
+lostchats --list   # just print the list
 ```
 
 Columns: last modification time, title, main model, context size, cost, lines added (or removed, if there are more of them) and directory. Codex logs have no cost or diff, so those cells are empty. A `✗` marks chats whose directory no longer exists. The bottom of the screen shows the id, full path and first prompt of the selected chat.
