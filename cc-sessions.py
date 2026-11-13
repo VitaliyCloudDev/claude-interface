@@ -75,7 +75,7 @@ def cols(when, mark, name, model, ctx, cost, lines, cwd):
             f"{cost:>6} │ {lines:>5} │ {cwd}")
 
 
-HEADER = cols('Modified', ' ', 'Title', 'Model', 'Ctx', 'Cost', 'Lines',
+HEADER = cols('Modified', ' ', 'Title', 'Model', 'Ctx', 'Cost', 'Diff',
               'Directory')
 
 
